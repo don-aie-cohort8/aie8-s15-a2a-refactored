@@ -1,0 +1,39 @@
+{
+  "first_message": {
+    "jsonrpc": "2.0",
+    "method": "send_message",
+    "id": "first-msg-uuid",
+    "params": {
+      "message": {
+        "role": "user",
+        "parts": [
+          {
+            "kind": "text",
+            "text": "Find me recent papers on transformer architectures"
+          }
+        ],
+        "message_id": "msg-1"
+      }
+    }
+  },
+  "follow_up_message": {
+    "jsonrpc": "2.0",
+    "method": "send_message",
+    "id": "second-msg-uuid",
+    "params": {
+      "message": {
+        "role": "user",
+        "parts": [
+          {
+            "kind": "text",
+            "text": "Can you summarize the key findings?"
+          }
+        ],
+        "message_id": "msg-2",
+        "task_id": "task-id-from-first-response",
+        "context_id": "context-id-from-first-response"
+      }
+    }
+  },
+  "_comment": "The task_id and context_id from the first response must be included in follow-up messages to maintain conversation context"
+}

@@ -1,0 +1,17 @@
+{
+  "jsonrpc": "2.0",
+  "method": "send_message",
+  "id": "example-uuid-1234",
+  "params": {
+    "message": {
+      "role": "user",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "What are the latest developments in artificial intelligence?"
+        }
+      ],
+      "message_id": "msg-abc123"
+    }
+  }
+}

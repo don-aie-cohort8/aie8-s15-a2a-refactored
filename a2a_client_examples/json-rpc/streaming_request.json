@@ -1,0 +1,18 @@
+{
+  "jsonrpc": "2.0",
+  "method": "send_streaming_message",
+  "id": "stream-uuid-5678",
+  "params": {
+    "message": {
+      "role": "user",
+      "parts": [
+        {
+          "kind": "text",
+          "text": "What are the latest developments in artificial intelligence?"
+        }
+      ],
+      "message_id": "stream-msg-xyz"
+    }
+  },
+  "_comment": "This request initiates a Server-Sent Events (SSE) stream for real-time response chunks"
+}

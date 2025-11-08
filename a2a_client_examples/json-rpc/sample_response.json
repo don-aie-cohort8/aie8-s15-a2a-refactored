@@ -1,0 +1,51 @@
+{
+  "standard_response": {
+    "jsonrpc": "2.0",
+    "id": "example-uuid-1234",
+    "result": {
+      "id": "task-abc123",
+      "context_id": "context-xyz789",
+      "state": "completed",
+      "artifacts": [
+        {
+          "name": "result",
+          "parts": [
+            {
+              "kind": "text",
+              "text": "Here are the latest developments in artificial intelligence..."
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "streaming_response_chunks": [
+    {
+      "event": "task",
+      "data": {
+        "id": "task-abc123",
+        "context_id": "context-xyz789",
+        "state": "working"
+      }
+    },
+    {
+      "event": "message",
+      "data": {
+        "content": "Searching for information..."
+      }
+    },
+    {
+      "event": "message",
+      "data": {
+        "content": "Here are the latest developments..."
+      }
+    },
+    {
+      "event": "task_update",
+      "data": {
+        "state": "completed"
+      }
+    }
+  ],
+  "_comment": "Responses include task_id and context_id for maintaining conversation state across multiple turns"
+}
