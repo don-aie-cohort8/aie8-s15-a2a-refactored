@@ -8,15 +8,25 @@ This is a learning repository for implementing the **A2A (Agent-to-Agent) Protoc
 
 ### Core Architecture
 
-The repository contains **two separate implementations** of the same agent:
+The repository contains **three major components**:
 
 1. **`app/`** - Original monolithic implementation (for reference/learning)
 2. **`a2a_service/`** - Refactored service with clean architecture (production-ready)
+   - `core/` - Protocol-agnostic business logic (graph, tools, RAG)
+   - `adapters/` - A2A Protocol-specific implementation
+   - Clear separation of concerns for maintainability and extensibility
 
-Both implement the same LangGraph agent with A2A Protocol, but `a2a_service/` follows a layered architecture pattern:
-- `core/` - Protocol-agnostic business logic (graph, tools, RAG)
-- `adapters/` - A2A Protocol-specific implementation
-- Clear separation of concerns for maintainability and extensibility
+3. **Repository Analyzer Framework** (`ra_*` directories) - Portable multi-domain analysis toolkit
+   - `ra_orchestrators/` - Multi-agent workflow orchestrators for different domains
+   - `ra_agents/` - Reusable agent definitions (JSON-based)
+   - `ra_tools/` - Tool integrations (MCP registry, Figma)
+   - `ra_output/` - Timestamped analysis results (gitignored)
+
+### Relationship Between Components
+
+- **A2A Service** (`app/` and `a2a_service/`): Demonstrates agent-to-agent protocol implementation with a specific use case (helpfulness evaluation)
+- **Repository Analyzer**: Applies the same multi-agent patterns at a higher abstraction level - orchestrators coordinate multiple specialized agents across different domains
+- **Shared Patterns**: Both use LangGraph, specialized agents, and tool integration, but at different scales and for different purposes
 
 ### Key Concept: The Wrapper Pattern
 
@@ -71,6 +81,19 @@ uv run langgraph dev
 # Access LangGraph Studio
 # API: http://localhost:2024
 # Studio: https://smith.langchain.com/studio?baseUrl=http://localhost:2024
+```
+
+### Repository Analyzer Framework
+
+```bash
+# Architecture analysis (generates ra_output/architecture_{timestamp}/)
+python -m ra_orchestrators.architecture_orchestrator "Project Name"
+
+# UX design workflow (generates ra_output/ux_{timestamp}/)
+python -m ra_orchestrators.ux_orchestrator "Project Name"
+
+# List available agents
+python -c "from ra_agents.registry import AgentRegistry; print(AgentRegistry().discover_agents())"
 ```
 
 ## Environment Configuration
@@ -190,10 +213,12 @@ from adapters.agent_executor import GeneralAgentExecutor
 
 | Error | Solution |
 |-------|----------|
-| Internal Error (-32603) | Check model names in `.env` (common: wrong model like gpt-4.1 instead of gpt-4o) |
+| Internal Error (-32603) | Check model names in `.env` (common: wrong model like gpt-4.1 instead of gpt-4o-mini or gpt-4o) |
 | Tool failures | Verify `TAVILY_API_KEY` and `OPENAI_API_KEY` are set |
 | RAG errors | Ensure PDFs in `data/` directory and OpenAI key configured |
 | Timeout on helpfulness | Evaluation can take 10-30s; this is expected behavior |
+| ModuleNotFoundError for `ra_*` | Ensure running from repository root, not subdirectory |
+| Agent not writing files | Verify agent prompt includes explicit Write tool instruction |
 
 ### Quick Diagnostics
 
@@ -205,7 +230,13 @@ uv run python check_env.py
 uv run python -c "from a2a_service.core.tools import get_tool_belt; print([t.name for t in get_tool_belt()])"
 
 # Test RAG loading
-uv run python -c "from a2a_service.core.rag import get_rag_graph; get_rag_graph(); print('OK')"
+uv run python -c "from a2a_service.core.rag_graph import get_rag_graph; get_rag_graph(); print('OK')"
+
+# Check RA framework agents
+python -c "from ra_agents.registry import AgentRegistry; r = AgentRegistry(); print('Available agents:', list(r.discover_agents().keys()))"
+
+# List MCP servers
+python -c "from ra_tools.mcp_registry import MCPRegistry; r = MCPRegistry(); print('MCP servers:', r.discover_servers())"
 ```
 
 ## Version Constraints
@@ -221,6 +252,66 @@ langchain-community = ">=0.3.0,<1.0"
 
 When adding dependencies, maintain these version constraints.
 
+## Repository Analyzer Framework
+
+### Overview
+
+The `ra_*` directories contain a **portable, drop-in analysis framework** designed to be added to any repository for comprehensive multi-domain analysis. Key features:
+
+- **Portability**: Drop into any repository without modification
+- **No Collisions**: `ra_` prefix avoids conflicts with existing code
+- **Timestamped Outputs**: Each run creates `ra_output/{domain}_{YYYYMMDD_HHMMSS}/`
+- **Multi-Domain**: Architecture, UX, DevOps (future), Testing (future)
+
+### Framework Components
+
+**Base Orchestrator** (`ra_orchestrators/base_orchestrator.py`):
+- Phase execution engine for sequential/concurrent workflows
+- Agent lifecycle management
+- Progress tracking with tool usage visibility
+- Cost monitoring per phase
+- Output verification and error handling
+
+**Domain Orchestrators**:
+- `architecture_orchestrator.py` - Repository structure, diagrams, data flows, API docs
+- `ux_orchestrator.py` - User research, IA, visual design, prototyping
+
+**Agent Registry** (`ra_agents/registry.py`):
+- JSON-based agent definitions in `ra_agents/{domain}/`
+- Lazy loading and caching
+- Cross-domain agent reusability
+
+**Tool Integrations** (`ra_tools/`):
+- `mcp_registry.py` - Discover and manage MCP server connections
+- `figma_integration.py` - Figma MCP and REST API wrapper
+
+### Adding a New Domain Orchestrator
+
+Target: <1 day to implement a new domain
+
+1. Create orchestrator class inheriting from `BaseOrchestrator`
+2. Define agents as JSON in `ra_agents/{domain}/`
+3. Implement `get_agent_definitions()`, `get_allowed_tools()`, and `run()`
+4. Run from repository root: `python -m ra_orchestrators.custom_orchestrator`
+
+See `ra_orchestrators/CLAUDE.md` for detailed patterns and best practices.
+
+### Output Structure
+
+All analyses generate timestamped outputs to avoid collisions:
+
+```
+ra_output/
+├── architecture_20251108_122754/
+│   ├── docs/
+│   ├── diagrams/
+│   └── README.md
+├── ux_20251108_140000/
+│   ├── 01_research/
+│   ├── 02_ia/
+│   └── ...
+```
+
 ## Learning Objectives
 
 This is an educational repository. Key concepts to understand:
@@ -229,5 +320,7 @@ This is an educational repository. Key concepts to understand:
 2. **Wrapper Pattern**: Separation between graph definition and streaming interface
 3. **Helpfulness Loop**: Autonomous quality evaluation and iteration
 4. **Clean Architecture**: Protocol-agnostic core vs. protocol-specific adapters
+5. **Multi-Agent Orchestration**: Framework-based orchestrators with specialized agents
+6. **Portable Analysis**: Drop-in toolkit design for repository analysis
 
 When making changes, preserve the educational structure and clear separation of concerns.

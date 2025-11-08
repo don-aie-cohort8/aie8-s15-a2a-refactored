@@ -1,166 +1,423 @@
-<p align = "center" draggable="false" ><img src="https://github.com/AI-Maker-Space/LLM-Dev-101/assets/37101144/d1343317-fa2f-41e1-8af1-1dbb18399719" 
-     width="200px"
-     height="auto"/>
-</p>
+# A2A Research Agent - Multi-Agent LangGraph Implementation
 
-## <h1 align="center" id="heading">Session 15: Build & Serve an A2A Endpoint for Our LangGraph Agent</h1>
+> A production-ready implementation of the Agent-to-Agent (A2A) Protocol using LangGraph, demonstrating autonomous helpfulness evaluation and clean architectural patterns for AI Engineering.
 
-| 🤓 Pre-work | 📰 Session Sheet | ⏺️ Recording     | 🖼️ Slides        | 👨‍💻 Repo         | 📝 Homework      | 📁 Feedback       |
-|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|:-----------------|
+## What This Project Demonstrates
 
-# A2A Protocol Implementation with LangGraph
+This repository showcases advanced agent architecture patterns through a **research agent with autonomous quality control**:
 
-This session focuses on implementing the **A2A (Agent-to-Agent) Protocol** using LangGraph, featuring intelligent helpfulness evaluation and multi-turn conversation capabilities.
+- **A2A Protocol Implementation** - Full agent discovery, communication, and streaming
+- **Helpfulness Evaluation Loop** - Self-evaluating responses before returning to users
+- **Hexagonal Architecture** - Protocol-agnostic core with adapter pattern
+- **Production-Grade Patterns** - Type safety, state management, tool integration
 
-## 🎯 Learning Objectives
+### The Helpfulness Innovation
 
-By the end of this session, you'll understand:
+Unlike traditional agents that return responses immediately, this implementation includes a **self-evaluation cycle**:
 
-- **🔄 A2A Protocol**: How agents communicate and evaluate response quality
+```
+Query → Agent → Tools → Response → Helpfulness Check → Return
+         ↑                            ↓ (Not helpful)
+         └────────────────────────────┘ (Max 10 iterations)
+```
 
-## 🧠 A2A Protocol with Helpfulness Loop
+The same LLM judges whether its response is accurate, complete, and uses appropriate tools. This ensures quality before user delivery.
 
-The core learning focus is this intelligent evaluation cycle:
+## Repository Architecture
+
+```
+aie8-s15-a2a-refactored/
+│
+├── a2a_service/              ⭐ Production implementation (use this)
+│   ├── core/                 # Protocol-agnostic business logic
+│   │   ├── graph.py          # Pure LangGraph state machine
+│   │   ├── agent.py          # Streaming wrapper interface
+│   │   ├── tools.py          # Tool implementations
+│   │   └── rag_graph.py      # RAG as a tool
+│   ├── adapters/             # Protocol-specific translation
+│   │   └── agent_executor.py # A2A protocol adapter
+│   └── README.md             # Architecture patterns deep-dive
+│
+├── app/                      # Reference implementation (monolithic)
+│   └── README.md             # Original flat structure
+│
+├── a2a_client_examples/      # Client implementation examples
+│   ├── a2a_client_tutorial.ipynb
+│   ├── test_client.py
+│   └── README.md
+│
+├── architecture/             # Comprehensive documentation
+│   ├── docs/                 # Component inventory, data flows, API
+│   ├── diagrams/             # Architecture diagrams
+│   └── README.md             # System overview
+│
+├── ra_*/                     # Repository Analyzer framework (advanced)
+│
+├── data/                     # RAG document storage (PDFs)
+│
+├── CLAUDE.md                 # Complete project guide
+└── .env.example              # Environment template
+```
+
+## Key Architectural Patterns
+
+### 1. The Wrapper Pattern
+
+**Understanding the dual "agent" structure:**
+
+| File | Purpose | Analogy |
+|------|---------|---------|
+| [core/graph.py](a2a_service/core/graph.py) | Pure LangGraph state machine definition | The engine |
+| [core/agent.py](a2a_service/core/agent.py) | Streaming wrapper providing interface | The dashboard |
+
+`graph.py` defines **what the agent does** (nodes, edges, routing logic).
+`agent.py` defines **how you interact with it** (streaming, response formatting).
+
+This separation enables reusability - the same graph works with any protocol (A2A, REST, gRPC).
+
+### 2. Hexagonal/Ports and Adapters
+
+**Why `app/` vs `a2a_service/`?**
+- `app/` - Original flat implementation (all files at same level)
+- `a2a_service/` - Refactored with clean layers (core vs adapters)
+- **Use `a2a_service/` for development** - it demonstrates production patterns
+
+### System Architecture
+
+The system follows a 5-layer architecture with clear separation of concerns:
 
 ```mermaid
-graph TD
-    A["👤 User Query"] --> B["🤖 Agent Node<br/>(LLM + Tools)"]
-    B --> C{"🔍 Tool Calls<br/>Needed?"}
-    C -->|"Yes"| D["⚡ Action Node<br/>(Tool Execution)"]
-    C -->|"No"| E["🎯 Helpfulness Node<br/>(A2A Evaluation)"]
-    D --> F["🔧 Execute Tools"]
-    F --> G["📊 Tavily Search<br/>(Web Results)"]
-    F --> H["📚 ArXiv Search<br/>(Academic Papers)"]  
-    F --> I["📄 RAG Retrieval<br/>(Document Search)"]
-    G --> B
-    H --> B
-    I --> B
-    E --> J{"✅ Is Response<br/>Helpful?"}
-    J -->|"Yes (Y)"| K["🏁 END<br/>(Task Complete)"]
-    J -->|"No (N)"| L{"🔄 Loop Count<br/>< 10?"}
-    L -->|"Yes"| B
-    L -->|"No"| K
-    
-    style A fill:#1e3a5f,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style B fill:#4a148c,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style C fill:#0d47a1,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style D fill:#1b5e20,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style E fill:#e65100,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style F fill:#2e7d32,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style G fill:#00695c,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style H fill:#4527a0,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style I fill:#283593,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style J fill:#2e7d32,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style K fill:#c62828,stroke:#ffffff,stroke-width:3px,color:#ffffff
-    style L fill:#f57c00,stroke:#ffffff,stroke-width:3px,color:#ffffff
+graph TB
+    subgraph PRES["Presentation Layer"]
+        A2A["A2A Starlette Server<br/>Port: 10000"]
+        Client["A2A Test Client"]
+    end
+
+    subgraph ADAPT["Adapter Layer"]
+        Executor["GeneralAgentExecutor<br/>AgentExecutor implementation"]
+        RequestHandler["DefaultRequestHandler<br/>A2A Protocol Handler"]
+    end
+
+    subgraph CORE["Core Business Logic"]
+        Agent["Agent<br/>Main orchestrator"]
+        Graph["LangGraph Builder<br/>Stateful workflow engine"]
+        ResponseFormat["ResponseFormat<br/>Pydantic models"]
+    end
+
+    subgraph TOOLS["Tool/Service Layer"]
+        ToolBelt["Tool Belt Assembly"]
+        Tavily["TavilySearch<br/>Web search"]
+        ArxivTool["ArxivQueryRun<br/>Academic papers"]
+        RAGTool["retrieve_information<br/>Document retrieval"]
+    end
+
+    subgraph DATA["Data Access Layer"]
+        RAGGraph["RAG Graph<br/>2-step: retrieve+generate"]
+        VectorStore["Qdrant Vector Store<br/>In-memory"]
+        PDFLoader["PyMuPDF Loader<br/>Document ingestion"]
+        Embeddings["OpenAI Embeddings<br/>text-embedding-3-small"]
+    end
+
+    subgraph EXT["External Services"]
+        OpenAI["OpenAI API<br/>gpt-4o-mini"]
+        TavilyAPI["Tavily API"]
+        ArxivAPI["ArXiv API"]
+        FileSystem["PDF Files<br/>data/"]
+    end
+
+    Client -->|HTTP/JSON-RPC| A2A
+    A2A --> RequestHandler
+    RequestHandler --> Executor
+    Executor -->|execute/stream| Agent
+    Agent --> Graph
+    Graph --> ToolBelt
+
+    ToolBelt --> Tavily
+    ToolBelt --> ArxivTool
+    ToolBelt --> RAGTool
+
+    RAGTool --> RAGGraph
+    RAGGraph --> VectorStore
+    RAGGraph -->|generate| OpenAI
+    VectorStore -->|embeddings| Embeddings
+    PDFLoader -->|chunks| VectorStore
+    FileSystem --> PDFLoader
+
+    Tavily --> TavilyAPI
+    ArxivTool --> ArxivAPI
+    Graph -->|LLM calls| OpenAI
+    Embeddings --> OpenAI
+
+    style PRES fill:#E0F7FA,stroke:#00BCD4,stroke-width:2px
+    style ADAPT fill:#FFF3E0,stroke:#FF9800,stroke-width:2px
+    style CORE fill:#E3F2FD,stroke:#4A90E2,stroke-width:2px
+    style TOOLS fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px
+    style DATA fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px
+    style EXT fill:#ECEFF1,stroke:#607D8B,stroke-width:2px
+
+    style Agent fill:#E3F2FD,stroke:#4A90E2,stroke-width:2px
+    style Graph fill:#E3F2FD,stroke:#4A90E2,stroke-width:2px
+    style ResponseFormat fill:#E3F2FD,stroke:#4A90E2,stroke-width:2px
+    style Executor fill:#FFF3E0,stroke:#FF9800,stroke-width:2px
+    style RequestHandler fill:#FFF3E0,stroke:#FF9800,stroke-width:2px
+    style A2A fill:#E0F7FA,stroke:#00BCD4,stroke-width:2px
+    style Client fill:#E0F7FA,stroke:#00BCD4,stroke-width:2px
+    style ToolBelt fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px
+    style Tavily fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px
+    style ArxivTool fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px
+    style RAGTool fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px
+    style RAGGraph fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px
+    style VectorStore fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px
+    style PDFLoader fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px
+    style Embeddings fill:#F3E5F5,stroke:#9C27B0,stroke-width:2px
+    style OpenAI fill:#ECEFF1,stroke:#607D8B,stroke-width:2px
+    style TavilyAPI fill:#ECEFF1,stroke:#607D8B,stroke-width:2px
+    style ArxivAPI fill:#ECEFF1,stroke:#607D8B,stroke-width:2px
+    style FileSystem fill:#ECEFF1,stroke:#607D8B,stroke-width:2px
 ```
 
-# Build 🏗️
+**Key Relationships:**
+- **Adapters depend on Core** (not vice versa) - enables protocol flexibility
+- **Core is protocol-agnostic** - same graph works with A2A, REST, or gRPC
+- **Tools are pre-approved** - execute automatically without human-in-the-loop
+- **RAG is a mini-graph** - separate 2-node LangGraph exposed as a tool
 
-Complete the following tasks to understand A2A protocol implementation:
+## Quick Start
 
-## 🚀 Quick Start
+**Prerequisites**: Python 3.13+, OpenAI API key, Tavily API key
 
 ```bash
-# Setup and run
-./quickstart.sh
+# Setup
+uv sync
+cp .env.example .env          # Configure API keys
+mkdir -p data                 # Optional: for RAG documents
+
+# Run the A2A service
+uv run python -m a2a_service
+
+# Test (separate terminal)
+uv run python a2a_client_examples/test_client.py
 ```
+
+**Environment variables** (`.env`):
+```bash
+OPENAI_API_KEY=sk-proj-your-key-here
+TAVILY_API_KEY=tvly-your-key-here     # Optional
+TOOL_LLM_NAME=gpt-4o-mini             # Default model
+RAG_DATA_DIR=data                      # PDF location
+```
+
+## Documentation Map
+
+### Start Here
+
+| Document | When to Read |
+|----------|--------------|
+| [CLAUDE.md](CLAUDE.md) | Comprehensive guide - patterns, setup, troubleshooting |
+| [architecture/README.md](architecture/README.md) | System design, architecture decisions, key findings |
+| [a2a_service/README.md](a2a_service/README.md) | Wrapper pattern, extension guide, architecture rationale |
+
+### Detailed Reference
+
+| Document | Purpose |
+|----------|---------|
+| [architecture/docs/01_component_inventory.md](architecture/docs/01_component_inventory.md) | Complete component catalog with line numbers |
+| [architecture/docs/03_data_flows.md](architecture/docs/03_data_flows.md) | Sequence diagrams for request/response flows |
+| [architecture/docs/04_api_reference.md](architecture/docs/04_api_reference.md) | API documentation with usage patterns |
+| [architecture/diagrams/02_architecture_diagrams.md](architecture/diagrams/02_architecture_diagrams.md) | Visual system architecture |
+| [a2a_client_examples/README.md](a2a_client_examples/README.md) | Client implementation and JSON-RPC formats |
+
+### Quick Navigation
+
+**I want to...**
+
+- 🏗️ **Understand the architecture** → [architecture/README.md](architecture/README.md)
+- 🔧 **Extend the agent** → [a2a_service/README.md](a2a_service/README.md)
+- 📡 **Build a client** → [a2a_client_examples/README.md](a2a_client_examples/README.md)
+- 🐛 **Debug issues** → [CLAUDE.md](CLAUDE.md) troubleshooting section
+
+## Common Operations
+
+### Running the Service
 
 ```bash
-# Start LangGraph server
-uv run python -m app
+# Default (localhost:10000)
+uv run python -m a2a_service
+
+# Custom host/port
+uv run python -m a2a_service --host 0.0.0.0 --port 8080
+
+# Verify running
+curl http://localhost:10000/.well-known/agent.json
 ```
+
+### Adding RAG Documents
 
 ```bash
-# Test the A2A Serer
-uv run python app/test_client.py
+# Add PDFs to data directory
+cp your-docs/*.pdf data/
+
+# Agent automatically uses RAG tool when appropriate
+# Example query: "What do the policies say about eligibility?"
 ```
 
-### 🏗️ Activity #1:
+### LangGraph Studio
 
-Build a LangGraph Graph to "use" your application.
+```bash
+# Start dev server
+uv run langgraph dev
 
-Do this by creating a Simple Agent that can make API calls to the 🤖Agent Node above through the A2A protocol. 
+# Access at: https://smith.langchain.com/studio?baseUrl=http://localhost:2024
+```
 
-### ❓ Question #1:
+## Learning Objectives
 
-What are the core components of an `AgentCard`?
+This repository teaches production-grade agent patterns:
 
-##### ✅ Answer:
+### Core Concepts
 
-<br />
+1. **A2A Protocol** - Agent discovery, communication, streaming responses
+2. **State Machines** - LangGraph for stateful workflows with conditional routing
+3. **Wrapper Pattern** - Separating graph definition from streaming interface
+4. **Hexagonal Architecture** - Protocol-agnostic core with adapters
+5. **Autonomous Quality Control** - Self-evaluating helpfulness loops
+6. **Multi-Agent Orchestration** - Coordinating specialized agents
+7. **Portable Frameworks** - Building reusable, drop-in toolkits
 
-### ❓ Question #2:
+### Recommended Learning Path
 
-Why is A2A (and other such protocols) important in your own words?
+```
+1. Read architecture/README.md              → Understand the system (30 min)
+2. Review a2a_service/README.md             → Learn the patterns (1 hour)
+3. Run the agent, test with client          → See it work (30 min)
+4. Study core/graph.py and core/agent.py    → Understand wrapper pattern (1 hour)
+5. Review adapters/agent_executor.py        → See protocol translation (30 min)
+6. Explore ra_orchestrators/                → Learn advanced orchestration (optional)
+7. Extend with custom tool                  → Apply knowledge (2-4 hours)
+```
 
-##### ✅ Answer:
+### Bootcamp Context
 
-<br /><br />
+- **Session 05**: Single-agent LangGraph patterns
+- **Session 06**: Multi-agent orchestration
+- **Session 15**: A2A Protocol implementation (this project)
 
-<details>
-<summary>🚧 Advanced Build 🚧 (OPTIONAL - <i>open this section for the requirements</i>)</summary>
+This project synthesizes concepts from earlier sessions and demonstrates production-ready patterns.
 
-Use a different Agent Framework to **test** your application.
+## Technical Details
 
-Do this by creating a Simple Agent that acts as different personas with different goals and have that Agent use your Agent through A2A. 
+### Available Tools
 
-Example:
+- **Tavily Search** - Real-time web search (max 5 results)
+- **ArXiv Search** - Academic paper retrieval
+- **RAG Retrieval** - Document search via Qdrant vector store
 
-"You are an expert in Machine Learning, and you want to learn about what makes Kimi K2 so incredible. You are not satisfied with surface level answers, and you wish to have sources you can read to verify information."
-</details>
+Tools execute automatically (no human-in-the-loop) based on agent decision-making.
 
-## 📁 Implementation Details
+### State Management
 
-For detailed technical documentation, file structure, and implementation guides, see:
+- **Thread-based context** - `context_id` maintains conversation state
+- **MemorySaver checkpointer** - In-memory state persistence
+- **Message accumulation** - `add_messages` reducer prevents overwrite
+- **Structured responses** - `ResponseFormat` maps to A2A `TaskState`
 
-**➡️ [app/README.md](./app/README.md)**
+### Helpfulness Loop Mechanics
 
-This contains:
-- Complete file structure breakdown
-- Technical implementation details
-- Tool configuration guides
-- Troubleshooting instructions
-- Advanced customization options
+```python
+# In core/graph.py
+def helpfulness_node(state, model):
+    if len(state["messages"]) > 10:
+        return {"messages": [AIMessage(content="HELPFULNESS:END")]}
 
-# Ship 🚢
+    # LLM-as-judge evaluation
+    # Returns "HELPFULNESS:Y" (done) or "HELPFULNESS:N" (loop back)
+```
 
-- Short demo showing running Client
+**Safeguards**:
+- Maximum 10 iterations to prevent infinite loops
+- Hard stop with `HELPFULNESS:END` marker
+- Router checks for limit markers and terminates
 
-# Share 🚀
+## Project Structure Rationale
 
-- Explain the A2A protocol implementation
-- Share 3 lessons learned about agent evaluation
-- Discuss 3 lessons not learned (areas for improvement)
+### Why Two Implementations?
 
-# Submitting Your Homework
+**`app/` (Original)**:
+- Educational reference showing initial design
+- All files at same level (flat structure)
+- Mixed protocol and business logic
 
-## Main Homework Assignment
+**`a2a_service/` (Refactored)**:
+- Production patterns with clear layering
+- Separated concerns (core vs adapters)
+- Reusable components
 
-Follow these steps to prepare and submit your homework assignment:
-1. Create a branch of your `AIE8` repo to track your changes. Example command: `git checkout -b s15-assignment`
-2. Complete the activity above
-3. Answer the questions above _in-line in this README.md file_
-4. Record a Loom video reviewing the Simple Agent you built for Activity #1 and the results.
-5. Commit, and push your changes to your `origin` repository. _NOTE: Do not merge it into your main branch._
-6. Make sure to include all of the following on your Homework Submission Form:
-    + The GitHub URL to the `15_A2A_LANGGRAPH` folder _on your assignment branch (not main)_
-    + The URL to your Loom Video
-    + Your Three Lessons Learned/Not Yet Learned
-    + The URLs to any social media posts (LinkedIn, X, Discord, etc.) ⬅️ _easy Extra Credit points!_
+Maintaining both demonstrates the evolution from working code to well-architected code.
 
-### OPTIONAL: 🚧 Advanced Build Assignment 🚧
-<details>
-  <summary>(<i>Open this section for the submission instructions.</i>)</summary>
+### Advanced: Repository Analyzer Framework
 
-Follow these steps to prepare and submit your homework assignment:
-1. Create a branch of your `AIE8` repo to track your changes. Example command: `git checkout -b s015-assignment`
-2. Complete the requirements for the Advanced Build
-3. Record a Loom video reviewing the agent you built and demostrating in action
-4. Commit, and push your changes to your `origin` repository. _NOTE: Do not merge it into your main branch._
-5. Make sure to include all of the following on your Homework Submission Form:
-    + The GitHub URL to the `15_A2A_LANGGRAPH` folder _on your assignment branch (not main)_
-    + The URL to your Loom Video
-    + Your Three Lessons Learned/Not Yet Learned
-    + The URLs to any social media posts (LinkedIn, X, Discord, etc.) ⬅️ _easy Extra Credit points!_
-</details>
+The `ra_*` directories contain a portable multi-agent orchestration framework for repository analysis. This is an advanced topic demonstrating how to apply agent patterns at scale.
+
+📖 **See**: [ra_orchestrators/README.md](ra_orchestrators/README.md) and [ra_orchestrators/CLAUDE.md](ra_orchestrators/CLAUDE.md)
+
+## Extension Guide
+
+### Adding a Tool
+
+```python
+# In a2a_service/core/tools.py
+from langchain_core.tools import tool
+
+@tool
+def my_custom_tool(query: str) -> str:
+    """Tool description for LLM."""
+    # Implementation
+    return result
+
+# Add to get_tool_belt()
+def get_tool_belt() -> List[BaseTool]:
+    return [
+        TavilySearchResults(max_results=5),
+        ArxivQueryRun(),
+        retrieve_information,
+        my_custom_tool,  # Your tool
+    ]
+```
+
+### Modifying Graph Logic
+
+Edit [a2a_service/core/graph.py](a2a_service/core/graph.py):
+- Add nodes: Define new node functions
+- Add edges: Update conditional routing logic
+- Update state: Modify `AgentState` TypedDict if needed
+
+Core logic changes don't require adapter modifications.
+
+### Adding a Protocol
+
+```
+a2a_service/adapters/
+├── agent_executor.py      # Existing A2A adapter
+└── rest_adapter.py        # New REST adapter
+```
+
+Implement new protocol translation without touching `core/`.
+
+## Version Information
+
+- **Python**: 3.13+
+- **LangGraph**: >=0.3.18,<1.0
+- **LangChain**: >=0.1.0,<1.0
+- **A2A SDK**: >=0.3.0
+
+## External Resources
+
+- **LangGraph**: https://langchain-ai.github.io/langgraph/
+- **LangChain**: https://python.langchain.com/
+- **A2A Protocol**: https://github.com/anthropics/a2a-sdk-python
+- **Tavily API**: https://tavily.com
+- **ArXiv API**: https://arxiv.org/help/api
+
+---
+
+**Start exploring**: Begin with [architecture/README.md](architecture/README.md) for system overview, then [a2a_service/README.md](a2a_service/README.md) for implementation patterns.

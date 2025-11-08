@@ -3,7 +3,7 @@ name = "a2a-sample-agent-langgraph"
 version = "0.1.0"
 description = "LangGraph agent with A2A Protocol and helpfulness evaluation"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "click>=8.1.8",
     "httpx>=0.28.1",
@@ -23,6 +23,7 @@ dependencies = [
     "qdrant-client>=1.7.0",
     "pymupdf>=1.23.0",
     "ipykernel>=7.1.0",
+    "claude-agent-sdk>=0.1.6",
 ]
 
 [tool.hatch.build.targets.wheel]
