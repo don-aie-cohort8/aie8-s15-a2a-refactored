@@ -80,18 +80,21 @@ The A2A Research Agent is a production-ready AI agent system that:
 
 **New Developers / Onboarding**
 1. Start here (this README) for high-level understanding
-2. Read [Component Inventory](docs/01_component_inventory.md) for detailed component reference
-3. Review [Architecture Diagrams](diagrams/02_architecture_diagrams.md) for visual understanding
+2. Read [Consumer-Provider Interaction](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md) to understand client vs server separation
+3. Read [Component Inventory](docs/01_component_inventory.md) for detailed component reference
+4. Review [Architecture Diagrams](diagrams/02_architecture_diagrams.md) for visual understanding
 
 **Integration Developers**
 1. Review this README's Architecture Summary
-2. Study [Data Flows](docs/03_data_flows.md) for request/response patterns
-3. Reference [API Reference](docs/04_api_reference.md) for implementation examples
+2. **Study [Consumer-Provider Interaction](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md)** for clear client/server boundaries
+3. Study [Data Flows](docs/03_data_flows.md) for request/response patterns
+4. Reference [API Reference](docs/04_api_reference.md) for implementation examples
 
 **System Architects**
 1. This README for architectural patterns and decisions
-2. [Architecture Diagrams](diagrams/02_architecture_diagrams.md) for system design
-3. [Component Inventory](docs/01_component_inventory.md) for component relationships
+2. **[Consumer-Provider Interaction](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md)** for protocol-level architecture and A2A integration
+3. [Architecture Diagrams](diagrams/02_architecture_diagrams.md) for system design
+4. [Component Inventory](docs/01_component_inventory.md) for component relationships
 
 **Maintainers / Contributors**
 1. All documentation for comprehensive understanding
@@ -102,19 +105,25 @@ The A2A Research Agent is a production-ready AI agent system that:
 
 ```
 ra_output/architecture_20251108_121016/
-├── README.md (YOU ARE HERE)           # Architecture overview and synthesis
+├── README.md (YOU ARE HERE)                          # Architecture overview and synthesis
 ├── docs/
-│   ├── 01_component_inventory.md     # Complete component catalog with line numbers
-│   ├── 03_data_flows.md              # Sequence diagrams for all data flows
-│   └── 04_api_reference.md           # API documentation with examples
+│   ├── 01_component_inventory.md                    # Complete component catalog with line numbers
+│   ├── 03_data_flows.md                             # Sequence diagrams for all data flows
+│   └── 04_api_reference.md                          # API documentation with examples
 └── diagrams/
-    └── 02_architecture_diagrams.md   # System architecture diagrams
+    ├── 02_architecture_diagrams.md                  # System architecture diagrams (internal implementation)
+    └── 02a_consumer_provider_interaction_architecture_diagrams.md  # Consumer/Provider separation (A2A protocol view)
 ```
 
 **Reading Order Recommendations:**
-- **Quick Overview**: This README + Architecture Diagrams (30 min)
-- **Implementation Details**: API Reference + Component Inventory (2 hours)
+- **Quick Overview**: This README + Consumer-Provider Interaction (30 min)
+- **Integration Focus**: Consumer-Provider Interaction + API Reference (1 hour)
+- **Implementation Details**: Architecture Diagrams + Component Inventory (2 hours)
 - **Deep Dive**: All documents + source code exploration (1 day)
+
+**Document Purpose Distinction:**
+- **[Consumer-Provider Interaction](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md)**: A2A protocol perspective - what runs on client vs server, discovery, initialization, and protocol-level boundaries
+- **[Architecture Diagrams](diagrams/02_architecture_diagrams.md)**: Internal implementation perspective - layered architecture, LangGraph workflows, component relationships within the server
 
 ---
 
@@ -584,6 +593,16 @@ See [API Reference](docs/04_api_reference.md) for complete examples.
 - A2A protocol integration
 - Configuration and environment management
 
+**[02a_consumer_provider_interaction_architecture_diagrams.md](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md)**
+- Consumer (client) vs Provider (server) separation
+- A2A protocol architecture overview with official diagrams
+- Discovery and initialization sequence (5 phases)
+- Consumer-side architecture and responsibilities
+- Provider-side architecture and responsibilities
+- Boundary matrix (what runs where)
+- Complete interaction flow diagrams
+- Task lifecycle state machine
+
 **[03_data_flows.md](docs/03_data_flows.md)**
 - Simple query flow (request/response)
 - Interactive client session flow (multi-turn)
@@ -608,7 +627,8 @@ See [API Reference](docs/04_api_reference.md) for complete examples.
 - [Entry Points](docs/01_component_inventory.md#entry-points) (Component Inventory)
 
 **Architecture Understanding:**
-- [System Architecture](diagrams/02_architecture_diagrams.md#system-architecture) (Architecture Diagrams)
+- [Consumer-Provider Separation](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md) (Protocol-Level Architecture)
+- [System Architecture](diagrams/02_architecture_diagrams.md#system-architecture) (Internal Implementation)
 - [Layered Design](#layered-architecture-overview) (This README)
 - [Component Relationships](diagrams/02_architecture_diagrams.md#component-relationships) (Architecture Diagrams)
 
@@ -618,6 +638,8 @@ See [API Reference](docs/04_api_reference.md) for complete examples.
 - [Data Flows](docs/03_data_flows.md) (Data Flows)
 
 **Advanced Topics:**
+- [A2A Discovery & Initialization](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md#2-discovery--initialization-sequence) (Consumer-Provider Interaction)
+- [Task Lifecycle](diagrams/02a_consumer_provider_interaction_architecture_diagrams.md#7-task-lifecycle-state-machine) (Consumer-Provider Interaction)
 - [LangGraph State Machine](diagrams/02_architecture_diagrams.md#langgraph-state-machine-flow) (Architecture Diagrams)
 - [RAG Architecture](diagrams/02_architecture_diagrams.md#rag-architecture-detail) (Architecture Diagrams)
 - [A2A Protocol Integration](diagrams/02_architecture_diagrams.md#a2a-protocol-integration) (Architecture Diagrams)

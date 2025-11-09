@@ -151,6 +151,31 @@ The `adapters/agent_executor.py` implements the A2A `AgentExecutor` interface:
 - Handles streaming via EventQueue
 - Manages multi-turn conversations with context_id
 
+### Consumer vs Provider Code Separation
+
+**Consumer (Client) Side** - `a2a_client_examples/`:
+- Discovers agents via AgentCard at `/.well-known/agent.json`
+- Initializes A2A client with ClientFactory
+- Constructs SendMessageRequest with proper structure
+- Maintains task_id and context_id for multi-turn conversations
+- Handles TaskState responses and artifacts
+
+**Provider (Server) Side** - `a2a_service/`:
+- Publishes AgentCard at well-known endpoint
+- Validates authentication and creates tasks
+- Executes agent logic (LLM, tools, workflows)
+- Manages task lifecycle states
+- Streams responses via EventQueue
+
+**Key Interaction Phases**:
+1. Discovery - Client fetches AgentCard
+2. Authentication - Out-of-band credential acquisition
+3. Initialization - Client creates A2A client
+4. First Request - Server creates task_id and context_id
+5. Multi-turn - Context maintained via context_id
+
+See `architecture/diagrams/02a_consumer_provider_interaction_architecture_diagrams.md` for detailed diagrams.
+
 ### AgentCard Components
 
 Defined in `a2a_service/__main__.py`:
@@ -312,15 +337,65 @@ ra_output/
 │   └── ...
 ```
 
+## Architecture Documentation
+
+The `architecture/` directory contains comprehensive documentation generated through automated repository analysis:
+
+### Document Organization
+
+**Consumer-Provider Separation** (`diagrams/02a_consumer_provider_interaction_architecture_diagrams.md`):
+- **What it covers**: A2A protocol perspective - what runs on client vs server
+- **Key sections**:
+  - Official A2A protocol architecture diagrams
+  - Discovery and initialization sequence (5 phases)
+  - Consumer-side architecture (client code)
+  - Provider-side architecture (server code)
+  - Boundary matrix showing responsibilities
+  - Complete interaction flow
+  - Task lifecycle state machine
+- **When to read**: Integration developers, system architects, anyone implementing A2A clients/servers
+
+**Internal Implementation** (`diagrams/02_architecture_diagrams.md`):
+- **What it covers**: Internal implementation perspective - layered architecture within the server
+- **Key sections**:
+  - System architecture with 5 layers
+  - Component relationships
+  - LangGraph state machine flows
+  - RAG architecture details
+  - Module dependencies
+- **When to read**: Developers extending the core agent, maintainers
+
+**Document Purpose Distinction**:
+- **02a_consumer_provider_interaction**: Protocol-level boundaries (client vs server, discovery, A2A handshake)
+- **02_architecture_diagrams**: Implementation details (how the server is structured internally)
+
+### Quick Links by Role
+
+**New Developers:**
+1. `architecture/README.md` - System overview
+2. `diagrams/02a_consumer_provider_interaction_architecture_diagrams.md` - Client/server separation
+3. `docs/01_component_inventory.md` - Component catalog
+
+**Integration Developers:**
+1. `diagrams/02a_consumer_provider_interaction_architecture_diagrams.md` - Protocol boundaries ⭐
+2. `docs/03_data_flows.md` - Request/response patterns
+3. `docs/04_api_reference.md` - Implementation examples
+
+**System Architects:**
+1. `diagrams/02a_consumer_provider_interaction_architecture_diagrams.md` - Protocol architecture ⭐
+2. `diagrams/02_architecture_diagrams.md` - System design
+3. `architecture/README.md` - Architectural decisions
+
 ## Learning Objectives
 
 This is an educational repository. Key concepts to understand:
 
 1. **A2A Protocol**: Agent discovery, communication, and evaluation
-2. **Wrapper Pattern**: Separation between graph definition and streaming interface
-3. **Helpfulness Loop**: Autonomous quality evaluation and iteration
-4. **Clean Architecture**: Protocol-agnostic core vs. protocol-specific adapters
-5. **Multi-Agent Orchestration**: Framework-based orchestrators with specialized agents
-6. **Portable Analysis**: Drop-in toolkit design for repository analysis
+2. **Consumer-Provider Model**: Clear separation of client-side vs server-side code
+3. **Wrapper Pattern**: Separation between graph definition and streaming interface
+4. **Helpfulness Loop**: Autonomous quality evaluation and iteration
+5. **Clean Architecture**: Protocol-agnostic core vs. protocol-specific adapters
+6. **Multi-Agent Orchestration**: Framework-based orchestrators with specialized agents
+7. **Portable Analysis**: Drop-in toolkit design for repository analysis
 
 When making changes, preserve the educational structure and clear separation of concerns.

@@ -23,6 +23,90 @@ Query → Agent → Tools → Response → Helpfulness Check → Return
 
 The same LLM judges whether its response is accurate, complete, and uses appropriate tools. This ensures quality before user delivery.
 
+## Understanding A2A Protocol Fundamentals
+
+### Consumer vs Provider Roles
+
+The A2A protocol establishes a **client-server model** where agents discover and collaborate while remaining **opaque** (no shared state, memory, or tools):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Business Analogy                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  CONSUMER (Customer)              PROVIDER (Business)           │
+│  ─────────────────────            ──────────────────           │
+│                                                                 │
+│  • Discovers services      ←──→   • Advertises services        │
+│  • Places orders                  • Processes orders           │
+│  • Receives products              • Delivers products          │
+│  • Provides feedback              • Maintains quality          │
+│                                                                 │
+│  Runs on customer's device        Runs on business servers     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**In Our Implementation:**
+- **Consumer (Client Agent)** = `a2a_client_examples/` - discovers agents, sends requests, handles responses
+- **Provider (Remote Agent)** = `a2a_service/` - advertises capabilities, executes logic, manages task lifecycle
+
+### A2A Protocol Pattern
+
+From the [official A2A documentation](https://github.com/a2aproject/A2A):
+
+```mermaid
+graph LR
+ User(🧑‍💻 User) <--> ClientAgent(🤖 Client Agent)
+ ClientAgent --> A2A1(**↔️ A2A**) --> RemoteAgent1(🤖 Remote Agent 1)
+ ClientAgent --> A2A2(**↔️ A2A**) --> RemoteAgent2(🤖 Remote Agent 2)
+
+ style User fill:#fdebd0,stroke:#e67e22,stroke-width:2px
+ style ClientAgent fill:#d6eaf8,stroke:#3498db,stroke-width:2px
+ style RemoteAgent1 fill:#d6eaf8,stroke:#3498db,stroke-width:2px
+ style RemoteAgent2 fill:#d6eaf8,stroke:#3498db,stroke-width:2px
+ style A2A1 fill:#ebedef,stroke:#909497,stroke-width:2px
+ style A2A2 fill:#ebedef,stroke:#909497,stroke-width:2px
+```
+
+**Key Concepts**:
+- **Protocol-Mediated Communication**: Standardized JSON-RPC over HTTP
+- **Multi-Agent Orchestration**: Client agent coordinates multiple remote agents
+- **Discovery-Based**: Agents find each other via AgentCard at `/.well-known/agent.json`
+
+### Quick Reference: Consumer vs Provider Boundaries
+
+| Concern | Consumer (Client Side) | Provider (Server Side) |
+|---------|------------------------|------------------------|
+| **Discovery** | Fetches AgentCard from `/.well-known/agent.json` | Serves AgentCard at well-known endpoint |
+| **Authentication** | Obtains & includes credentials in headers | Validates credentials, returns 401/403 on failure |
+| **Message Flow** | Constructs SendMessageRequest | Parses and routes incoming messages |
+| **Task Management** | Monitors task states via responses | Creates task_id/context_id, manages lifecycle |
+| **Business Logic** | Presents UI, orchestrates workflows | Executes agent logic (LLM, tools, RAG) |
+| **Code Location** | `a2a_client_examples/` | `a2a_service/` |
+| **Infrastructure** | HTTP client, credential storage | HTTP server, LLM APIs, vector DB, task store |
+
+### Deep Dive: Consumer-Provider Architecture Document
+
+The comprehensive [Consumer-Provider Interaction Architecture](architecture/diagrams/02a_consumer_provider_interaction_architecture_diagrams.md) contains detailed diagrams and explanations:
+
+| Section | Purpose |
+|---------|---------|
+| **1. Introduction** | Consumer vs Provider definitions, business analogy, A2A protocol context |
+| **2. Discovery & Initialization** | 5-phase handshake sequence before data exchange |
+| **3. Consumer-Side Architecture** | Client components, responsibilities, data flow diagrams |
+| **4. Provider-Side Architecture** | Server components, responsibilities, data flow diagrams |
+| **5. Boundary Matrix** | Complete responsibility separation table (18 concerns mapped) |
+| **6. Complete Interaction Flow** | End-to-end sequence diagram with all 6 phases |
+| **7. Task Lifecycle State Machine** | Task states, transitions, and immutability principles |
+
+**Official A2A Resources**:
+- [A2A Protocol Specification](https://github.com/a2aproject/A2A)
+- [Official Website](https://a2a-protocol.org)
+- [Anthropic A2A Guide](https://docs.claude.com/en/docs/agents/a2a-protocol)
+
+---
+
 ## Repository Architecture
 
 ```
@@ -225,6 +309,7 @@ RAG_DATA_DIR=data                      # PDF location
 | [architecture/docs/03_data_flows.md](architecture/docs/03_data_flows.md) | Sequence diagrams for request/response flows |
 | [architecture/docs/04_api_reference.md](architecture/docs/04_api_reference.md) | API documentation with usage patterns |
 | [architecture/diagrams/02_architecture_diagrams.md](architecture/diagrams/02_architecture_diagrams.md) | Visual system architecture |
+| [architecture/diagrams/02a_consumer_provider_interaction_architecture_diagrams.md](architecture/diagrams/02a_consumer_provider_interaction_architecture_diagrams.md) | Consumer / Provider interaction |
 | [a2a_client_examples/README.md](a2a_client_examples/README.md) | Client implementation and JSON-RPC formats |
 
 ### Quick Navigation
